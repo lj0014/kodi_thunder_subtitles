@@ -7,3 +7,4 @@ kodi迅雷字幕插件
 
 2、迅雷字幕下载源码来自https://github.com/weaming/thunder-subtitle
 
+3、kodi 19初步测试正常
