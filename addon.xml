@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <addon id="service.subtitles.thunder"
        name="Thunder"
-       version="0.1.0"
+       version="0.2.1"
        provider-name="lijin">
     <requires>
         <import addon="xbmc.python" version="3.0.0"/>
@@ -28,8 +28,17 @@
             <screenshot>resources/media/screenshot_3.jpg</screenshot>
         </assets>
         <news>
-V0.1.0 (2013-12-04)
+V0.2.1 (2026-10-31)
+- 修复字幕列表名称乱码：恢复旧中文编码和转义名称，清理已损坏的名称片段
+
+V0.2.0 (2026-10-31)
+- 修复 Kodi 20+ 路径接口、字幕下载和参数解析
+- 增加请求超时、错误提示、ZIP 字幕选择和下载大小限制
+- 修复 UTF-8 编码及简繁转换流程
+
+V0.1.0 (2021-03-20)
 - 在shooter源码的基础上进行修改，迅雷相关源码来自https://github.com/weaming/thunder-subtitle
         </news>
     </extension>
 </addon>
+
