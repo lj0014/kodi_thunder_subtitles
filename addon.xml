@@ -14,9 +14,9 @@
         <summary lang="en">Thunder</summary>
         <summary lang="zh">迅雷字幕</summary>
         <summary lang="zh_TW">迅雷字幕</summary>
-        <description lang="en">Find, download and load Chinese subtitles from Thunder for the video playing in Kodi. Version 0.2.1 has been verified in actual use on Kodi 19 for Windows.</description>
-        <description lang="zh">看电影缺少中文字幕时，按当前播放视频匹配迅雷字幕，下载后直接加载。0.2.1 已通过 Windows 版 Kodi 19 真实使用验证，字幕搜索、下载和加载正常。</description>
-        <description lang="zh_TW">看電影缺少中文字幕時，依目前播放的影片比對迅雷字幕，下載後直接載入。0.2.1 已通過 Windows 版 Kodi 19 實際使用驗證，字幕搜尋、下載和載入正常。</description>
+        <description lang="en">Download Chinese subtitles from Thunder for the video playing in Kodi. Supports UTF-8 encoding and Simplified/Traditional Chinese conversion.</description>
+        <description lang="zh">根据正在播放的视频匹配并下载迅雷中文字幕，支持 UTF-8 编码和简繁转换。</description>
+        <description lang="zh_TW">依目前播放的影片比對並下載迅雷中文字幕，支援 UTF-8 編碼及簡繁轉換。</description>
         <platform>all</platform>
         <license>GNU GENERAL PUBLIC LICENSE. Version 2, June 1991</license>
         <assets>

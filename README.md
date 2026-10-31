@@ -1,55 +1,66 @@
 # Kodi 迅雷字幕（Thunder）
 
-看电影缺少中文字幕时，可在 Kodi 的字幕下载菜单中选择 **Thunder**，按当前播放视频的文件指纹（CID）匹配迅雷字幕，下载后直接加载使用。
+Kodi 中文字幕下载插件。播放影片时，根据视频文件的 CID 匹配迅雷字幕，下载后加载到播放器。
 
-**0.2.1 已于 2026-10-31 通过真实 Kodi 使用验证**，字幕搜索、下载和加载可正常使用。已验证环境为 Windows 版 Kodi 19；插件面向 Kodi 19 及以上的 Python 3 接口，Android TV 尚未单独进行真机验证。
+支持 UTF-8 编码转换、简繁转换和 ZIP 字幕包。
+
+## 兼容性
+
+- Kodi 19 及以上版本（Python 3）。
+- 0.2.1 已在 Windows 版 Kodi 19 实测，字幕搜索、下载和加载正常。
+- Android TV 尚未实测。
 
 ## 安装和使用
 
-1. 下载插件 ZIP（`service.subtitles.thunder-0.2.1.zip`），不要直接安装 GitHub 的源码 ZIP。
-2. Kodi → 设置 → 插件 → 从 ZIP 文件安装，选择插件 ZIP。若提示，先允许未知来源。依赖 `script.module.requests` 和 `script.module.chardet` 由 Kodi 安装。
-3. 播放视频，打开字幕菜单，选择下载字幕，再选择 **Thunder**。
-4. 选择搜索结果。ZIP 中包含多个字幕时，会提示选择其中一个。
-5. 插件设置中可开启“文本字幕保存为 UTF-8”，再选择简体或繁体转换；默认保留原编码。
+1. 下载插件安装包 `service.subtitles.thunder-0.2.1.zip`。
+2. 在 Kodi 中打开 **设置 → 插件 → 从 ZIP 文件安装**，选择安装包。首次安装可能需要开启“未知来源”。
+3. 播放影片，打开 **字幕 → 下载字幕 → Thunder**。
+4. 选择字幕。ZIP 包含多个字幕时，可选择其中一个文件。
 
-## 0.2.1 改进
+依赖 `script.module.requests` 和 `script.module.chardet`，由 Kodi 安装。
 
-- 修复字幕列表名称乱码：兼容 UTF-8、GBK/GB18030、URL 转义名称和部分可逆乱码。
-- 保留正常中文；旧接口已经损坏、无法恢复的名称片段会清理，保留片名、版本和扩展名。完整名称均不可读时使用编号标签。下载链接不受显示名称清理影响。
+在插件设置中开启“文本字幕保存为 UTF-8”后，可选择简体或繁体转换。默认保留原编码。
 
-## 0.2.0 改进
+## 使用说明
 
-- 替换 Kodi 20 已移除的 `xbmc.translatePath`，使用 `xbmcvfs.translatePath`。
-- 修复带有 `&`、`=`、`+` 等字符的字幕下载链接被截断的问题。
-- 真正下载并保存字幕到插件数据目录，然后进行编码和简繁转换。
-- 请求设置连接和读取超时；搜索最多尝试 3 次，区分服务错误和无匹配结果。
-- 校验文件读取和定位结果，处理空文件、无法定位的流和读取不足。
-- 支持 ZIP 内字幕选择，限制下载及解压总大小为 20 MiB，避免使用压缩包提供的目录路径。
-- 搜索不再删除已下载字幕；失败时显示提示，并完成 Kodi 目录回调。
-- 中英文、繁体中文错误提示；日志不记录媒体凭据或字幕签名链接。
+- 按视频文件匹配字幕，不支持片名搜索。手动搜索仍会匹配当前播放文件。
+- 支持本地文件和可读取、可定位的网络文件，如 SMB、NFS。无法获取文件大小或随机定位的流媒体不能参与匹配。
+- 支持 SRT、ASS、SSA、SMI、VTT、SUB、TXT 及 ZIP 包。暂不支持 RAR、7z 和需要配套 IDX 文件的 VobSub 字幕。
+- 下载及 ZIP 解压总大小上限为 20 MiB。
+- 字幕库不一定包含当前视频版本的字幕。部分旧字幕名称已在源站损坏，列表会清理乱码并保留可读部分。
+- 下载文件保存在 Kodi 插件数据目录 `addon_data/service.subtitles.thunder/`，停止播放后可手动清理。
 
-## 支持范围和限制
+## 更新记录
 
-- 这是**文件哈希匹配**，迅雷此接口不支持片名搜索。手动搜索会提示后继续匹配当前视频。
-- 本地视频及可随机定位的 Kodi VFS 文件可参与匹配（例如 SMB/NFS，取决于 Kodi 的访问权限）。实时流、无法读取大小或无法定位的 HTTP 流无法计算 CID。
-- 支持直接字幕及 ZIP；暂不支持 RAR、7z。文本扩展名包括 SRT、ASS、SSA、SMI、VTT、SUB、TXT。二进制 VobSub 不转换编码，配套 IDX 文件下载尚不支持。
-- 使用原项目的迅雷字幕接口 `http://sub.xmp.sandai.net:8000/subxl/{CID}.json`，已通过真实 Kodi 场景验证可用。字幕覆盖率和匹配结果取决于迅雷字幕库；该 HTTP 接口不提供传输加密。
-- 已通过 24 项自动测试，并由维护者在 Windows 版 Kodi 19 中完成真实电影播放场景的使用验证。自动测试使用模拟网络和 Kodi 接口，主要用于后续修改的回归检查。
-- 下载的字幕保留在 Kodi 插件数据目录 `addon_data/service.subtitles.thunder/`，可在停止播放后手动清理。
+### 0.2.1
 
-## 开发、测试和打包
+- 修复字幕列表名称乱码，兼容旧中文编码、URL 转义名称和部分可恢复的乱码。
+
+### 0.2.0
+
+- 修复 Kodi 20 及以上版本的路径接口兼容问题。
+- 修复含特殊字符的下载链接、字幕保存、UTF-8 编码及简繁转换。
+- 增加网络超时、错误提示、ZIP 多字幕选择和下载大小限制。
+
+## 开发
+
+安装依赖并运行测试：
 
 ```sh
 python -m pip install -r requirements-dev.txt
 python -m unittest discover -s tests -v
+```
+
+构建安装包：
+
+```sh
 python tools/build.py
 ```
 
-安装包位于 `dist/`，顶层目录是 `service.subtitles.thunder/`，只包含运行文件和资源。GitHub Actions 在 Python 3.8、3.11、3.13 下运行测试，并提供安装包构建产物；不会自动发布 Release。
+安装包输出到 `dist/`，顶层目录为 `service.subtitles.thunder/`。GitHub Actions 在 Python 3.8、3.11、3.13 下运行测试并构建安装包。
 
-后续开发可按以下场景回归检查：本地视频匹配、SMB 视频匹配、含签名参数的下载链接、ZIP 多字幕选择和取消、UTF-8/简繁转换、断网提示、重新搜索后已加载字幕是否仍可使用。
+## 来源与许可
 
-## 来源
+基于 [Shooter 字幕插件](https://github.com/taxigps/service.subtitles.shooter) 改造。迅雷 CID 算法和查询代码参考 [weaming/thunder-subtitle](https://github.com/weaming/thunder-subtitle) 及其引用的 xunlei-lixian 项目，沿用原有简繁转换库和资源。
 
-基于 [Shooter 字幕插件](https://github.com/taxigps/service.subtitles.shooter) 改造；迅雷 CID 算法和查询思路来自 [weaming/thunder-subtitle](https://github.com/weaming/thunder-subtitle) 及其引用的 xunlei-lixian 项目。保留原有简繁转换库和资源。插件元数据沿用原有 GPL v2 声明。
-
+许可证沿用插件元数据中的 GPL v2 声明。
