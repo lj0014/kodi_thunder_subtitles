@@ -50,6 +50,13 @@ class SearchTests(unittest.TestCase):
         self.assertEqual(get.call_args.kwargs['timeout'], thunder.TIMEOUT)
 
     @patch('thunder.requests.get')
+    def test_damaged_utf8_metadata_preserves_download_link(self, get):
+        get.return_value = response(b'{"sublist":[{"sname":"bad\xff.srt","surl":"https://example.com/a.srt"}]}')
+        subtitles = thunder.search_subtitles('A' * 40, max_attempts=1)
+        self.assertEqual(subtitles[0]['surl'], 'https://example.com/a.srt')
+        self.assertIn('\ufffd', subtitles[0]['sname'])
+
+    @patch('thunder.requests.get')
     def test_failed_requests_are_bounded(self, get):
         get.side_effect = thunder.requests.Timeout()
         with self.assertRaises(thunder.SubtitleError):

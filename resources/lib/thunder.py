@@ -60,7 +60,10 @@ def search_subtitles(cid, max_attempts=3, monitor=None):
             with requests.get(API_URL.format(cid), timeout=TIMEOUT, stream=True) as response:
                 response.raise_for_status()
                 import json
-                result = json.loads(read_response(response, 2 * 1024 * 1024))
+                # The legacy service declares UTF-8 but some subtitle metadata
+                # contains malformed bytes. Match requests.text's replacement
+                # behavior so one damaged name does not discard valid links.
+                result = json.loads(read_response(response, 2 * 1024 * 1024).decode('utf-8', errors='replace'))
             if not isinstance(result, dict) or not isinstance(result.get('sublist'), list):
                 raise ValueError('Invalid subtitle response')
             entries, seen = [], set()
