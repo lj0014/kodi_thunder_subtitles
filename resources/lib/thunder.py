@@ -5,7 +5,7 @@ import io
 import os
 import re
 import zipfile
-from urllib.parse import unquote, urlsplit
+from urllib.parse import unquote, unquote_to_bytes, urlsplit
 
 import requests
 
@@ -50,6 +50,47 @@ def valid_url(url):
         return False
 
 
+def subtitle_name(value, fallback='Thunder subtitle'):
+    """Recover intact encodings; omit irreversibly damaged name fragments."""
+    if not isinstance(value, str) or not value.strip():
+        return fallback
+    try:
+        raw = value.encode('utf-8', errors='surrogateescape')
+    except UnicodeEncodeError:
+        raw = value.encode('utf-8', errors='replace')
+    # Some records store an entire upload path as a percent-encoded name.
+    if re.search(rb'%[0-9a-fA-F]{2}', raw):
+        raw = unquote_to_bytes(raw)
+    for encoding in ('utf-8', 'gb18030'):
+        try:
+            name = raw.decode(encoding)
+            break
+        except UnicodeDecodeError:
+            continue
+    else:
+        name = raw.decode('utf-8', errors='replace')
+    try:
+        repaired = name.encode('latin-1').decode('utf-8')
+        name = repaired
+    except (UnicodeEncodeError, UnicodeDecodeError):
+        pass
+    name = name.replace('\\', '/').rsplit('/', 1)[-1]
+    # A replacement character cannot be decoded back to the missing character.
+    # Drop its bracketed annotation instead of displaying a wall of diamonds.
+    for pattern in (r'\[[^\[\]]*\]', r'\([^()]*\)', r'【[^【】]*】', r'（[^（）]*）'):
+        name = re.sub(pattern, lambda m: '' if '\ufffd' in m.group() else m.group(), name)
+    name = re.sub(r'[?\ufffd]*\ufffd[?\ufffd]*', '', name)
+    name = ''.join(c for c in name if c.isprintable())
+    name = re.sub(r'\s+', ' ', name).strip(' -_')
+    if name.lower() in EXTENSIONS:
+        return fallback
+    name = re.sub(r'\.{2,}', '.', name).strip(' .-_')
+    stem, extension = os.path.splitext(name)
+    if not any(c.isalnum() for c in (stem or name)):
+        return fallback
+    return name or fallback
+
+
 def search_subtitles(cid, max_attempts=3, monitor=None):
     if not re.fullmatch(r'[A-Fa-f0-9]{40}', cid):
         raise SubtitleError('Invalid CID')
@@ -60,10 +101,9 @@ def search_subtitles(cid, max_attempts=3, monitor=None):
             with requests.get(API_URL.format(cid), timeout=TIMEOUT, stream=True) as response:
                 response.raise_for_status()
                 import json
-                # The legacy service declares UTF-8 but some subtitle metadata
-                # contains malformed bytes. Match requests.text's replacement
-                # behavior so one damaged name does not discard valid links.
-                result = json.loads(read_response(response, 2 * 1024 * 1024).decode('utf-8', errors='replace'))
+                # Preserve malformed bytes until each name's encoding can be
+                # checked; replacing bytes here would lose recoverable GBK.
+                result = json.loads(read_response(response, 2 * 1024 * 1024).decode('utf-8', errors='surrogateescape'))
             if not isinstance(result, dict) or not isinstance(result.get('sublist'), list):
                 raise ValueError('Invalid subtitle response')
             entries, seen = [], set()
@@ -74,8 +114,8 @@ def search_subtitles(cid, max_attempts=3, monitor=None):
                 if not isinstance(url, str) or not valid_url(url) or url in seen:
                     continue
                 seen.add(url)
-                name = sub.get('sname')
-                entries.append({'surl': url, 'sname': name if isinstance(name, str) and name else 'Thunder subtitle'})
+                name = subtitle_name(sub.get('sname'), 'Thunder subtitle {:02d}'.format(len(entries) + 1))
+                entries.append({'surl': url, 'sname': name})
             return entries
         except (requests.RequestException, ValueError, SubtitleError):
             if attempt == max(1, min(max_attempts, 3)) - 1:

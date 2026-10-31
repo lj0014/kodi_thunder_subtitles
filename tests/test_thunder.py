@@ -54,7 +54,13 @@ class SearchTests(unittest.TestCase):
         get.return_value = response(b'{"sublist":[{"sname":"bad\xff.srt","surl":"https://example.com/a.srt"}]}')
         subtitles = thunder.search_subtitles('A' * 40, max_attempts=1)
         self.assertEqual(subtitles[0]['surl'], 'https://example.com/a.srt')
-        self.assertIn('\ufffd', subtitles[0]['sname'])
+        self.assertEqual(subtitles[0]['sname'], 'bad.srt')
+
+    @patch('thunder.requests.get')
+    def test_gbk_name_is_decoded_before_bytes_are_lost(self, get):
+        get.return_value = response(b'{"sublist":[{"sname":"' + '阿甘正传.简体.srt'.encode('gb18030') + b'","surl":"https://example.com/a.srt"}]}')
+        subtitles = thunder.search_subtitles('A' * 40, max_attempts=1)
+        self.assertEqual(subtitles[0]['sname'], '阿甘正传.简体.srt')
 
     @patch('thunder.requests.get')
     def test_failed_requests_are_bounded(self, get):
@@ -79,6 +85,31 @@ class SearchTests(unittest.TestCase):
     def test_abort_stops_network(self, get):
         self.assertEqual(thunder.search_subtitles('A' * 40, monitor=Mock(abortRequested=lambda: True)), [])
         get.assert_not_called()
+
+
+class SubtitleNameTests(unittest.TestCase):
+    def test_damaged_annotations_in_screenshot(self):
+        names = {
+            '[��������(��ĩ��)].Forrest.Gump.1994.BluRay.srt': 'Forrest.Gump.1994.BluRay.srt',
+            'Forrest Gump.1080i.dts(全�?)国英四音轨ts版.hdpop1.srt': 'Forrest Gump.1080i.dts国英四音轨ts版.hdpop1.srt',
+            'Forrest.Gump.1994.1080p.BluRay.x264.DTS-ETRG.����.srt': 'Forrest.Gump.1994.1080p.BluRay.x264.DTS-ETRG.srt',
+        }
+        for original, expected in names.items():
+            self.assertEqual(thunder.subtitle_name(original), expected)
+
+    def test_valid_chinese_and_release_annotations_are_preserved(self):
+        for name in ('阿甘正传（简体中文）.srt', '[中英双语].Forrest.Gump.1994[1080p].ass', 'Forrest Gump+中文.srt'):
+            self.assertEqual(thunder.subtitle_name(name), name)
+
+    def test_encoded_upload_paths_and_legacy_percent_encoding(self):
+        self.assertEqual(thunder.subtitle_name('C%3A%5Csubs%5C%E9%98%BF%E7%94%98%E6%AD%A3%E4%BC%A0.srt'), '阿甘正传.srt')
+        self.assertEqual(thunder.subtitle_name('%B0%A2%B8%CA%D5%FD%B4%AB.srt'), '阿甘正传.srt')
+
+    def test_latin1_mojibake_and_fallbacks(self):
+        damaged = '阿甘正传.srt'.encode('utf-8').decode('latin-1')
+        self.assertEqual(thunder.subtitle_name(damaged), '阿甘正传.srt')
+        for name in (None, '', '[����].srt', '\ufffd\ufffd'):
+            self.assertEqual(thunder.subtitle_name(name, 'Subtitle 01'), 'Subtitle 01')
 
 
 class DownloadTests(unittest.TestCase):
