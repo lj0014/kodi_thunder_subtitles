@@ -3,7 +3,7 @@
 import os
 import sys
 import tempfile
-from urllib.parse import parse_qsl, urlencode
+from urllib.parse import parse_qsl, unquote, urlencode, urlsplit
 
 import xbmc
 import xbmcaddon
@@ -14,7 +14,7 @@ import xbmcvfs
 ADDON = xbmcaddon.Addon()
 sys.path.insert(0, xbmcvfs.translatePath(os.path.join(
     ADDON.getAddonInfo('path'), 'resources', 'lib')))
-from thunder import SubtitleError, cid_hash, search_subtitles, download_subtitles
+from thunder import SubtitleError, cid_hash, search_all_subtitles, download_subtitles
 
 
 def notify(message_id):
@@ -23,20 +23,61 @@ def notify(message_id):
                                 xbmcgui.NOTIFICATION_INFO)
 
 
-def search(handle):
-    path = xbmc.Player().getPlayingFile()
+def info_label(name):
+    value = xbmc.getInfoLabel(name)
+    return value.strip() if isinstance(value, str) else ''
+
+
+def search_names(path, manual_name=None):
+    if manual_name is not None:
+        return [manual_name] if manual_name.strip() else []
+    # Decode only the basename sent to the name API. Kodi VFS receives the
+    # original URI, including percent escapes, in the file-reading path.
+    name = unquote(urlsplit(path.split('|', 1)[0]).path).replace('\\', '/').rsplit('/', 1)[-1]
+    names = [name] if name else []
+    show = info_label('VideoPlayer.TVShowTitle')
+    season, episode = info_label('VideoPlayer.Season'), info_label('VideoPlayer.Episode')
+    if show:
+        if season.isdigit() and episode.isdigit():
+            names.append('%s S%02dE%02d' % (show, int(season), int(episode)))
+    else:
+        year = info_label('VideoPlayer.Year')
+        year = ' ' + year if year.isdigit() and len(year) == 4 else ''
+        for field in ('VideoPlayer.OriginalTitle', 'VideoPlayer.Title'):
+            title = info_label(field)
+            if title:
+                names.append(title + year)
+    return names
+
+
+def search(handle, manual_name=None):
+    try:
+        path = xbmc.Player().getPlayingFile()
+    except RuntimeError:
+        path = ''
     if path.startswith('stack://'):
         path = path[8:].split(' , ')[0]
     # Preserve percent escapes: the VFS owns URI decoding, including SMB URLs.
-    with xbmcvfs.File(path, 'rb') as stream:
-        cid = cid_hash(stream)
-    subtitles = search_subtitles(cid, monitor=xbmc.Monitor())
+    cid = None
+    if path:
+        try:
+            with xbmcvfs.File(path, 'rb') as stream:
+                cid = cid_hash(stream)
+        except Exception:
+            # Streams without random access can still use name lookup.
+            pass
+    names = search_names(path, manual_name)
+    if not cid and not any(names):
+        raise SubtitleError('No readable file or search name', 32013)
+    subtitles = search_all_subtitles(cid, names, monitor=xbmc.Monitor())
     if not subtitles:
         notify(32010)
     for sub in subtitles:
-        item = xbmcgui.ListItem(label='Chinese', label2=sub['sname'])
-        item.setArt({'icon': '0', 'thumb': 'zh'})
-        item.setProperty('sync', 'true')
+        language = sub.get('language', '').lower()
+        english = language in ('英语', '英語', 'english', 'eng', 'en')
+        item = xbmcgui.ListItem(label='English' if english else 'Chinese', label2=sub['sname'])
+        item.setArt({'icon': '0', 'thumb': 'en' if english else 'zh'})
+        item.setProperty('sync', 'true' if 'CID' in sub.get('origin', 'CID') else 'false')
         item.setProperty('hearing_imp', 'false')
         query = urlencode({'action': 'download', 'filename': sub['surl'],
                            'name': sub['sname']})
@@ -83,9 +124,12 @@ def main(argv=None):
         if action == 'search':
             search(handle)
         elif action == 'manualsearch':
-            # Thunder's CID endpoint cannot search by title.
-            notify(32011)
-            search(handle)
+            name = params.get('searchstring', '').strip()
+            if not name:
+                name = xbmcgui.Dialog().input(ADDON.getLocalizedString(32011),
+                                             defaultt=info_label('VideoPlayer.OriginalTitle') or info_label('VideoPlayer.Title'))
+            if isinstance(name, str) and name.strip():
+                search(handle, name.strip())
         elif action == 'download':
             download(handle, params)
     except Exception as exc:

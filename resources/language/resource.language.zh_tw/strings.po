@@ -36,8 +36,8 @@ msgid "No subtitles found"
 msgstr "沒有找到匹配的字幕"
 
 msgctxt "#32011"
-msgid "Title search is unavailable; matching the playing file instead"
-msgstr "迅雷不支援片名搜尋，將比對目前播放檔案"
+msgid "Search subtitles by name"
+msgstr "輸入片名搜尋字幕（可加年份）"
 
 msgctxt "#32012"
 msgid "Subtitle operation failed. See the Kodi log."

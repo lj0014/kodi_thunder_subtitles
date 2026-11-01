@@ -44,6 +44,20 @@ class CIDTests(unittest.TestCase):
 
 class SearchTests(unittest.TestCase):
     @patch('thunder.requests.get')
+    def test_combined_wrapper_returns_name_results_when_cid_empty(self, get):
+        import json
+        def request(url, **kwargs):
+            if url == thunder.API_URL.format('A' * 40):
+                return response(b'{"sublist":[]}')
+            return response(json.dumps({'code': 0, 'data': [{'name': 'Spider-Man.2.2004.chs.srt',
+                'url': 'https://subtitle.v.geilijiasu.com/spider.srt', 'languages': ['简体']}]}).encode())
+        get.side_effect = request
+        found = thunder.search_all_subtitles('A' * 40, ['Spider-Man.2.2004'])
+        self.assertEqual(len(found), 1)
+        self.assertEqual(found[0]['sname'], 'Spider-Man.2.2004.chs.srt')
+        self.assertEqual(found[0]['origin'], '名称')
+
+    @patch('thunder.requests.get')
     def test_filters_malformed_and_duplicate_records(self, get):
         get.return_value = response(b'{"sublist":[null,{}, {"surl":"file:///etc/passwd"}, {"surl":"https://example.com/a?x=1&y=2","sname":"test"}, {"surl":"https://example.com/a?x=1&y=2"}]}')
         self.assertEqual(thunder.search_subtitles('A' * 40), [{'surl': 'https://example.com/a?x=1&y=2', 'sname': 'test'}])

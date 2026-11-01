@@ -8,6 +8,7 @@ import zipfile
 from urllib.parse import unquote, unquote_to_bytes, urlsplit
 
 import requests
+from name_search import NameSearchError, SearchCancelled, combined_search
 
 API_URL = 'http://sub.xmp.sandai.net:8000/subxl/{}.json'
 TIMEOUT = (5, 15)
@@ -123,6 +124,21 @@ def search_subtitles(cid, max_attempts=3, monitor=None):
             if monitor and monitor.waitForAbort(0.5 * (attempt + 1)):
                 return []
     return []
+
+
+def search_all_subtitles(cid=None, names=(), monitor=None):
+    def legacy():
+        return [{'url': item['surl'], 'name': item['sname']} for item in search_subtitles(cid, monitor=monitor)]
+    try:
+        records, failures = combined_search(legacy if cid else None, names, subtitle_name,
+                                             monitor.abortRequested if monitor else None)
+        if not records and failures:
+            raise SubtitleError('Thunder lookup partially failed', 32014)
+        return [dict(item, surl=item['url'], sname=item['name']) for item in records]
+    except SearchCancelled:
+        return []
+    except NameSearchError:
+        raise SubtitleError('Thunder service unavailable', 32014) from None
 
 
 def read_response(response, limit=MAX_BYTES):

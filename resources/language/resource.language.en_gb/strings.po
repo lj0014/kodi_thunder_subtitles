@@ -36,7 +36,7 @@ msgid "No subtitles found"
 msgstr ""
 
 msgctxt "#32011"
-msgid "Title search is unavailable; matching the playing file instead"
+msgid "Search subtitles by name"
 msgstr ""
 
 msgctxt "#32012"
