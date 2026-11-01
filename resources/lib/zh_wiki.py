@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
-# copy fom wikipedia
+# SPDX-License-Identifier: GPL-2.0-only
+# Data attributed to Wikipedia by skydark/nstools; see notice.txt.
+# Local dictionary corrections retained.
 
 zh2Hant = {
 '呆': '獃',
@@ -8284,3 +8286,4 @@ zh2SG = {
 "房价": "屋价",
 "泡麵": "快速面",
 }
+

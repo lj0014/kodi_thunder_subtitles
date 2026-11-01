@@ -1,5 +1,6 @@
 """Exercise the actual entry point with Kodi modules replaced at the boundary."""
 import importlib.util
+import runpy
 from pathlib import Path
 import sys
 import tempfile
@@ -8,6 +9,7 @@ from unittest.mock import Mock, MagicMock, patch
 from urllib.parse import urlencode, parse_qs, urlsplit
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / 'resources/lib'))
 
 
 class ServiceTests(unittest.TestCase):
@@ -24,9 +26,16 @@ class ServiceTests(unittest.TestCase):
         self.patcher = patch.dict(sys.modules, self.modules)
         self.patcher.start()
         self.addCleanup(self.patcher.stop)
-        spec = importlib.util.spec_from_file_location('test_service_entry', ROOT / 'service.py')
+        spec = importlib.util.spec_from_file_location('test_service_entry', ROOT / 'resources/lib/kodi_service.py')
         self.service = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(self.service)
+
+    def test_entry_point_initialises_library_path_and_dispatches(self):
+        entry_module = Mock()
+        with patch.dict(sys.modules, {'kodi_service': entry_module}), patch.object(sys, 'path', sys.path[:]):
+            runpy.run_path(str(ROOT / 'service.py'), run_name='__main__')
+            self.assertEqual(Path(sys.path[0]), ROOT / 'resources/lib')
+        entry_module.main.assert_called_once_with()
 
     def test_missing_action_finishes_without_crashing(self):
         self.service.main(['plugin://thunder', '1', ''])
