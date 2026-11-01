@@ -12,7 +12,7 @@ Kodi 中文字幕下载插件。播放影片时，合并视频 CID 匹配和名�
 
 ## 安装和使用
 
-1. 下载插件安装包 `service.subtitles.thunder-0.3.0.zip`。
+1. 下载插件安装包 `service.subtitles.thunder-0.3.1.zip`。
 2. 在 Kodi 中打开 **设置 → 插件 → 从 ZIP 文件安装**，选择安装包。首次安装可能需要开启“未知来源”。
 3. 播放影片，打开 **字幕 → 下载字幕 → Thunder**。
 4. 选择字幕。ZIP 包含多个字幕时，可选择其中一个文件。
@@ -33,6 +33,12 @@ Kodi 中文字幕下载插件。播放影片时，合并视频 CID 匹配和名�
 - 下载文件保存在 Kodi 插件数据目录 `addon_data/service.subtitles.thunder/`，停止播放后可手动清理。
 
 ## 更新记录
+
+### 0.3.1
+
+- 补齐 GPL v2 许可证、代码及素材来源说明。
+- 更新插件元数据、依赖版本及原创图标和背景。
+- 移除简繁转换库中未使用的旧命令行入口和 psyco 导入。
 
 ### 0.3.0
 
@@ -67,9 +73,22 @@ python tools/build.py
 
 安装包输出到 `dist/`，顶层目录为 `service.subtitles.thunder/`。GitHub Actions 在 Python 3.8、3.11、3.13 下运行测试并构建安装包。
 
+## 官方仓库检查
+
+```sh
+python -m pip install kodi-addon-checker==0.0.36
+python tools/build.py --stage build/official
+python tools/check_official.py build/official/service.subtitles.thunder
+```
+
+每次检查使用新的暂存目录，避免混入旧文件。检查目标为 `matrix`，启用 PR 和依赖检查。
+官方检查器 0.0.36 的仓库列表地址使用 HTTP，检查脚本改用 Kodi 官方镜像 `ftp.fau.de` 的 HTTPS 索引，未跳过检查项。
+检查通过不等于官方收录；提交仍须由 Team Kodi 审核。0.3.1 尚未完成播放器实测。
+
+图标与背景可用 `python tools/artwork.py` 重新生成，需要 Pillow 9.1 及以上版本。
+
 ## 来源与许可
 
-基于 [Shooter 字幕插件](https://github.com/taxigps/service.subtitles.shooter) 改造。迅雷 CID 算法和查询代码参考 [weaming/thunder-subtitle](https://github.com/weaming/thunder-subtitle) 及其引用的 xunlei-lixian 项目，沿用原有简繁转换库和资源。
-
-许可证沿用插件元数据中的 GPL v2 声明。
-
+许可证为 [GPL v2](LICENSE.txt)。代码来源、上游版本和素材说明见 [notice.txt](notice.txt)。
+原插件结构参考 Shooter；简繁转换代码来自 skydark/nstools；CID 算法参考 weaming/thunder-subtitle。
+图标与背景为本项目原创几何图形。插件与迅雷、Kodi 官方没有隶属关系。

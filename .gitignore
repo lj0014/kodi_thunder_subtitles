@@ -2,3 +2,5 @@ __pycache__/
 *.py[cod]
 .venv/
 dist/
+build/
+kodi-addon-checker*.log

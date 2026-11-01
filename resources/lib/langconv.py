@@ -1,14 +1,10 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+# SPDX-License-Identifier: GPL-2.0-only
+# Derived from skydark/nstools zhtools; see notice.txt for source and changes.
 
 from copy import deepcopy
 import re
-
-try:
-    import psyco
-    psyco.full()
-except:
-    pass
 
 from zh_wiki import zh2Hant, zh2Hans
 
@@ -220,43 +216,3 @@ def registery(name, mapping):
 registery('zh-hant', zh2Hant)
 registery('zh-hans', zh2Hans)
 del zh2Hant, zh2Hans
-
-
-def run():
-    import sys
-    from optparse import OptionParser
-    parser = OptionParser()
-    parser.add_option('-e', type='string', dest='encoding',
-            help='encoding')
-    parser.add_option('-f', type='string', dest='file_in',
-            help='input file (- for stdin)')
-    parser.add_option('-t', type='string', dest='file_out',
-            help='output file')
-    (options, args) = parser.parse_args()
-    if not options.encoding:
-        parser.error('encoding must be set')
-    if options.file_in:
-        if options.file_in == '-':
-            file_in = sys.stdin
-        else:
-            file_in = open(options.file_in)
-    else:
-        file_in = sys.stdin
-    if options.file_out:
-        if options.file_out == '-':
-            file_out = sys.stdout
-        else:
-            file_out = open(options.file_out, 'wb')
-    else:
-        file_out = sys.stdout
-
-    c = Converter(options.encoding)
-    for line in file_in:
-        # print >> file_out, c.convert(line.rstrip('\n').decode(
-        file_out.write(c.convert(line.rstrip('\n').decode(
-            'utf8')).encode('utf8'))
-
-
-if __name__ == '__main__':
-    run()
-
